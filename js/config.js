@@ -8,8 +8,14 @@ window.MINIDFS_CONFIG = {
   professor: 'Prof. MSc. Felipe Jucá dos Santos',
   turma: 'Turma 26',
 
-  // Troque pelos nomes (e, se quiser, matrículas) dos integrantes do grupo.
-  equipe: ['Integrante 1', 'Integrante 2', 'Integrante 3', 'Integrante 4'],
+  // Integrantes do grupo (podem incluir matrículas, se quiser).
+  equipe: [
+    'Nycaio Adriano Bezerra',
+    'Rafael da Silva Leites',
+    'Guilherme Albuquerque do Nascimento',
+    'Eduardo Guilherme Barroso',
+    'Nicolas Simões Leão Santos'
+  ],
 
   // Tempo (ms) que o NameNode espera sem heartbeat antes de declarar um DataNode morto e re-replicar.
   timeoutHeartbeat: 3500
