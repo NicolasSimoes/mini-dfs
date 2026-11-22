@@ -189,6 +189,18 @@ test('cp cria blocos novos e independentes', () => {
   c.overwrite('/f', 'mudou');
   assert.strictEqual(text(c.read('/g')), 'abcdefghijkl');
 });
+test('cp herda a replicação da origem já na alocação (sem sobre-replicar)', () => {
+  const c = fresh();
+  c.write('/f', 'abcdefghijkl'); // 2 blocos
+  c.setReplication('/f', 1);
+  const g = c.cp('/f', '/g');
+  assert.strictEqual(g.replication, 1);
+  for (const id of g.blocks) assert.strictEqual(c.blocks.get(id).replicas.size, 1);
+  assert.strictEqual(c.health().overReplicated, 0);
+  c.setReplication('/f', 2);
+  const h = c.cp('/f', '/h');
+  for (const id of h.blocks) assert.strictEqual(c.blocks.get(id).replicas.size, 2);
+});
 
 console.log('\nApagar / lixeira');
 test('rm vai para a lixeira e restore devolve', () => {

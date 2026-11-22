@@ -422,8 +422,12 @@
     }
 
     /* ---------------------------------------------------------------- escrita */
-    /** Escrever: cria um arquivo novo. Falha se já existir. */
-    write(path, data) {
+    /**
+     * Escrever: cria um arquivo novo. Falha se já existir.
+     * `opts.replication` define o fator de replicação do arquivo ANTES de alocar os blocos
+     * (usado pelo cp, para a cópia já nascer com o fator da origem).
+     */
+    write(path, data, opts = {}) {
       const bytes = toBytes(data);
       const parts = this._parts(path);
       const { parent, name } = this._parentOf(parts);
@@ -434,6 +438,7 @@
       this._emit('info', 'cliente', `write ${full} (${bytes.length} B)`);
       this._emit('info', 'namenode', `cria o inode de ${full} e divide o conteúdo em blocos de até ${this.config.blockSize} B`);
       const file = this._newInode('file', name, parent.id);
+      if (opts.replication !== undefined) file.replication = opts.replication;
       try {
         file.blocks = this._storeBlocks(file, bytes);
       } catch (e) {
@@ -719,9 +724,8 @@
       else full = toPath(parts);
       this._emit('info', 'cliente', `cp ${this.pathOf(s)} → ${full}`);
       const { bytes } = this._readFile(s);
-      const copy = this.write(full, bytes);
-      copy.replication = s.replication;
-      return copy;
+      // a cópia herda o fator de replicação da origem já na alocação dos blocos
+      return this.write(full, bytes, { replication: s.replication });
     }
 
     setReplication(path, n) {
