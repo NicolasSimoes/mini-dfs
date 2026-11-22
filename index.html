@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini-DFS · Sistema de arquivos distribuído</title>
+  <meta name="description" content="Simulador didático de um sistema de arquivos distribuído (DFS): NameNode, DataNodes, blocos, replicação, falhas e recuperação.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%232446e0%27/%3E%3Crect x=%274%27 y=%274%27 width=%2711%27 height=%2711%27 rx=%272%27 fill=%27%23fff%27/%3E%3Crect x=%2717%27 y=%274%27 width=%2711%27 height=%2711%27 rx=%272%27 fill=%27%237fa0ff%27/%3E%3Crect x=%274%27 y=%2717%27 width=%2711%27 height=%2711%27 rx=%272%27 fill=%27%237fa0ff%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%2711%27 height=%2711%27 rx=%272%27 fill=%27%23fff%27/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <h1>Mini-DFS</h1>
+      <p id="subtitle"></p>
+    </div>
+    <div class="team" id="team" aria-label="Equipe"></div>
+    <nav class="top-actions" aria-label="Ações gerais">
+      <button class="btn primary" data-action="demo">Demo guiada</button>
+      <button class="btn" data-action="about">Como funciona</button>
+      <button class="btn" data-action="settings">Configurações</button>
+      <button class="btn" data-action="reset">Reiniciar cluster</button>
+    </nav>
+  </header>
+
+  <section id="demo-bar" class="demo-bar" hidden aria-live="polite"></section>
+
+  <section id="stats" class="stats" aria-label="Saúde do cluster"></section>
+
+  <main class="layout">
+    <section class="col-left">
+      <div class="panel" id="explorer"></div>
+      <div class="panel" id="detail"></div>
+    </section>
+
+    <section class="col-right">
+      <div class="panel" id="cluster"></div>
+
+      <div class="panel dark" id="bottom">
+        <div class="tabs" role="tablist" aria-label="Console, log e mapa de blocos">
+          <button class="tab" role="tab" data-action="tab" data-tab="console" aria-selected="true">Console</button>
+          <button class="tab" role="tab" data-action="tab" data-tab="log" aria-selected="false">Log de eventos</button>
+          <button class="tab" role="tab" data-action="tab" data-tab="blocks" aria-selected="false">Mapa de blocos do NameNode</button>
+        </div>
+
+        <div class="pane" id="pane-console" role="tabpanel">
+          <div id="con-out" class="con-out" aria-live="polite"></div>
+          <form id="con-form" class="con-form" autocomplete="off">
+            <label id="con-prompt" for="con-in"></label>
+            <input id="con-in" type="text" spellcheck="false" autocapitalize="off" placeholder="digite um comando, ex.: help">
+          </form>
+        </div>
+
+        <div class="pane" id="pane-log" role="tabpanel" hidden>
+          <div class="log-bar">
+            <button class="chip on" data-action="log-filter" data-filter="all">Tudo</button>
+            <button class="chip" data-action="log-filter" data-filter="cliente">Cliente</button>
+            <button class="chip" data-action="log-filter" data-filter="namenode">NameNode</button>
+            <button class="chip" data-action="log-filter" data-filter="datanode">DataNodes</button>
+            <button class="chip right" data-action="log-clear">Limpar</button>
+          </div>
+          <div id="log-out" class="log-out" data-filter="all"></div>
+        </div>
+
+        <div class="pane" id="pane-blocks" role="tabpanel" hidden>
+          <div id="blocks-out" class="blocks-out"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal" hidden></div>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <div id="tip" class="tip" hidden></div>
+
+  <noscript><p style="padding:24px">Este simulador precisa de JavaScript habilitado.</p></noscript>
+
+  <script src="js/config.js"></script>
+  <script src="js/dfs.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
