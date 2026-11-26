@@ -1435,6 +1435,30 @@
     }
   ];
 
+  /* Resultado real de cada passo (mostrado depois de executar, junto com o estado dos discos). */
+  const RESULTADOS = [
+    'Só o NameNode agiu (criou /docs e /docs/so). Nenhum DataNode foi acionado, então os discos continuam vazios.',
+    '105 B viraram 4 blocos (32 + 32 + 32 + 9 B), cada um copiado em 3 DataNodes: 4 × 3 = 12 cópias nos discos.',
+    'Os discos não mudaram. O stat listou, para cada bloco, os 3 DataNodes que guardam as cópias.',
+    'Os discos não mudaram. O cliente leu cada bloco de um DataNode, conferiu o checksum e remontou o texto.',
+    'O texto novo tem 54 B e coube em 2 blocos × 3 = 6 cópias. As 12 cópias antigas foram removidas e o arquivo virou v2.',
+    'Entrou 1 bloco novo de 32 B (3 cópias); os blocos antigos não foram tocados. O arquivo agora tem 86 B em 3 blocos (9 cópias).',
+    'Os discos não mudaram: só o nome mudou no NameNode (intro.txt → leitura.txt). Os 3 blocos ficaram onde estavam.',
+    'Os discos não mudaram: só o NameNode anotou a nova pasta (/docs). Nenhum bloco se moveu entre DataNodes.',
+    'rascunho.txt foi criado e depois substituído por 3 blocos novos com o conteúdo de leitura.txt; os blocos do rascunho antigo foram liberados. Agora são 6 blocos (18 cópias).',
+    'O dn2 caiu e a leitura continuou (failover). Passado o timeout, o NameNode o declarou morto e refez as cópias que ele tinha nos outros nós: todas as réplicas voltaram ao alvo.',
+    'O dn2 voltou e mandou seu block report. Como já havia 3 cópias de cada bloco, as cópias em excesso foram removidas.',
+    'O fsck achou 1 réplica corrompida (estado Degradado) e, com --repair, ela foi refeita a partir de uma cópia boa. O cluster voltou a Saudável.',
+    'O arquivo foi para a lixeira e já foi restaurado neste mesmo passo. Só metadados mudaram: os blocos não saíram dos discos.',
+    'rascunho.txt foi apagado de vez e as cópias dele saíram de todos os DataNodes. Sobraram só os 3 blocos de leitura.txt (9 cópias).',
+    'Com 1 cópia por bloco, derrubar um nó deixou o arquivo ilegível (o erro vermelho é de propósito). Quando o nó voltou, a leitura funcionou de novo.'
+  ];
+
+  /* Quantos blocos cada DataNode guarda neste momento. */
+  function demoDisks() {
+    return cluster.nodes.map((n) => `${n.id} ${n.online ? n.store.size : 'fora do ar'}`).join(' · ');
+  }
+
   function renderDemo() {
     const bar = $('#demo-bar');
     const d = ui.demo;
@@ -1443,12 +1467,16 @@
       return;
     }
     bar.hidden = false;
+    const prev = !d.busy && d.last ? d.last : null;
+    const resultado = prev
+      ? `<p class="demo-text" style="padding:6px 10px;margin-bottom:6px;background:#e3f4ec;border-left:3px solid #12a38a;border-radius:6px"><b>Resultado do passo ${prev.i + 1} (${esc(DEMO[prev.i].title)}):</b> ${esc(RESULTADOS[prev.i])} <b>Discos agora: ${esc(prev.disks)}.</b></p>`
+      : '';
     if (d.i >= DEMO.length) {
-      bar.innerHTML = `<div class="demo-title">Demo concluída</div><p class="demo-text">Você viu escrever, ler, sobrescrever, anexar, renomear, mover, substituir, apagar e restaurar, além de falha de nó, corrupção e recuperação. Pode continuar explorando pelo console ou pela interface.</p><div class="demo-btns"><button class="btn" data-action="demo">Recomeçar</button><button class="btn primary" data-action="demo-exit">Fechar demo</button></div>`;
+      bar.innerHTML = `<div style="grid-column:1;min-width:0">${resultado}<div class="demo-title">Demo concluída</div><p class="demo-text">Você viu escrever, ler, sobrescrever, anexar, renomear, mover, substituir, apagar e restaurar, além de falha de nó, corrupção e recuperação. Pode continuar explorando pelo console ou pela interface.</p></div><div class="demo-btns"><button class="btn" data-action="demo">Recomeçar</button><button class="btn primary" data-action="demo-exit">Fechar demo</button></div>`;
       return;
     }
     const s = DEMO[d.i];
-    bar.innerHTML = `<div class="demo-title"><small>Passo ${d.i + 1} de ${DEMO.length}</small>${esc(s.title)}</div><p class="demo-text">${esc(s.text)}</p><div class="demo-btns"><button class="btn primary" data-action="demo-next"${d.busy ? ' disabled' : ''}>${d.busy ? 'Executando…' : 'Executar passo'}</button><button class="btn" data-action="demo-exit">Fechar demo</button></div>`;
+    bar.innerHTML = `<div style="grid-column:1;min-width:0">${resultado}<div class="demo-title"><small>${prev ? 'Próximo: ' : ''}Passo ${d.i + 1} de ${DEMO.length}</small>${esc(s.title)}</div><p class="demo-text">${esc(s.text)}</p></div><div class="demo-btns"><button class="btn primary" data-action="demo-next"${d.busy ? ' disabled' : ''}>${d.busy ? 'Executando…' : 'Executar passo ' + (d.i + 1)}</button><button class="btn" data-action="demo-exit">Fechar demo</button></div>`;
   }
 
   function demoStart() {
@@ -1458,7 +1486,7 @@
     cluster.config.replication = DEFAULTS.replication;
     cluster.config.nodeCapacity = DEFAULTS.nodeCapacity;
     resetCluster();
-    ui.demo = { i: 0, busy: false };
+    ui.demo = { i: 0, busy: false, last: null };
     setTab('console');
     conPrint('Demo guiada iniciada: cluster reiniciado com 4 DataNodes, bloco de 32 B e replicação 3.', 'step');
     renderDemo();
@@ -1486,6 +1514,7 @@
         await sleep(700);
       }
     }
+    d.last = { i: d.i, disks: demoDisks() };
     d.i++;
     d.busy = false;
     renderDemo();
